@@ -281,7 +281,7 @@ main (int argc, char *argv[])
         system(python_cmd.c_str());
 
         string segments_location = folder_name + "/segment_%02d.ts";
-        string playlist_location = folder_name + "/playlist.m3u8";
+        string playlist_location = folder_name + "/live";
 
         g_object_set (G_OBJECT (hlssink),
             "playlist-root", hls_uri.c_str(),
