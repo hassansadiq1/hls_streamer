@@ -5,12 +5,15 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <vector>
 
 #include "gstnvdsmeta.h"
 
 #define GST_CAPS_FEATURES_NVMM "memory:NVMM"
 #define SOURCE_PROPERTIES  "../source_properties.ini"
 using namespace std;
+
+vector<string> folder_names;
 
 static gboolean
 bus_call (GstBus * bus, GstMessage * msg, gpointer data)
@@ -162,6 +165,19 @@ void loadIntConfig(char *str1, int& str2) {
     exit(0);
 }
 
+void close_ports(){
+    for (int i = 0; i < folder_names.size(); i++) {
+    string kill_cmd = "kill -9 `cat " + folder_names[i] + "/pid.txt`";
+    system(kill_cmd.c_str());
+    }
+}
+
+void sig_handler(int signo)
+{
+    close_ports();
+    exit(0);
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -252,26 +268,23 @@ main (int argc, char *argv[])
         string folder_name = "source_" + to_string(index+1);
         string folder_cmd = "mkdir " + folder_name;
         system(folder_cmd.c_str());
+        folder_names.push_back(folder_name);
 
         string hls_uri = "";
         string hls_uri_prefix = "hls_uri_" + to_string(index+1);
         loadStrConfig((char *)hls_uri_prefix.c_str(), hls_uri);
-        cout << "HLS URI: " << hls_uri << endl;
-        // // parse uri to get port
-        // string port = hls_uri.substr(uri.find_last_of(":") + 5);
-        // cout<<"Port: "<<port<<endl;
-        // // start python http server for each source and keep its pid
-        // string python_cmd = "python3 -m http.server " + port + " --directory " + folder_name + " & echo $! > " + folder_name + "/pid.txt";
-        // system(python_cmd.c_str());
-        // // close python http server
-        // string kill_cmd = "kill -9 `cat " + folder_name + "/pid.txt`";
+
+        string port = hls_uri.substr(hls_uri.find_last_of(":") + 1);
+
+        // start python http server for each source and keep its pid
+        string python_cmd = "python3 -m http.server " + port + " --directory " + folder_name + " & echo $! > " + folder_name + "/pid.txt";
+        system(python_cmd.c_str());
 
         string segments_location = folder_name + "/segment_%02d.ts";
         string playlist_location = folder_name + "/playlist.m3u8";
-        cout<<"segments_location: "<<segments_location<<endl;
-        cout<<"playlist_location: "<<playlist_location<<endl;
+
         g_object_set (G_OBJECT (hlssink),
-            "playlist-root", hls_uri,
+            "playlist-root", hls_uri.c_str(),
             "location", segments_location.c_str(),
             "playlist-location", playlist_location.c_str(),
             "target-duration", 3,
@@ -286,6 +299,9 @@ main (int argc, char *argv[])
         string kill_cmd = "kill -9 `cat " + folder_name + "/pid.txt`";
     }
 
+    // handle signals
+    signal(SIGINT, sig_handler);
+
     // Set the pipeline to "playing" state
     gst_element_set_state(pipeline, GST_STATE_PLAYING);
     g_main_loop_run(loop);
@@ -296,5 +312,6 @@ main (int argc, char *argv[])
     gst_object_unref (GST_OBJECT (pipeline));
     g_source_remove (bus_watch_id);
     g_main_loop_unref (loop);
+    close_ports();
     return 0;
 }
