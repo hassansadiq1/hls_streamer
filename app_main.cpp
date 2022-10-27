@@ -14,6 +14,7 @@
 using namespace std;
 
 vector<string> folder_names;
+GstElement *pipeline = NULL;
 
 static gboolean
 bus_call (GstBus * bus, GstMessage * msg, gpointer data)
@@ -174,6 +175,8 @@ void close_ports(){
 
 void sig_handler(int signo)
 {
+    gst_element_set_state (pipeline, GST_STATE_NULL);
+    gst_object_unref (GST_OBJECT (pipeline));
     close_ports();
     exit(0);
 }
@@ -187,7 +190,7 @@ main (int argc, char *argv[])
     gst_init (&argc, &argv);
 
     GMainLoop *loop = NULL;
-    GstElement *pipeline = NULL, *streammux = NULL, *streamdemux = NULL, *fakesink = NULL;
+    GstElement *streammux = NULL, *streamdemux = NULL, *fakesink = NULL;
     GstBus *bus = NULL;
     guint bus_watch_id;
 
@@ -313,11 +316,8 @@ main (int argc, char *argv[])
     g_main_loop_run(loop);
     /* Out of the main loop, clean up nicely */
     g_print ("Returned, stopping playback\n");
-    gst_element_set_state (pipeline, GST_STATE_NULL);
-    g_print ("Deleting pipeline\n");
-    gst_object_unref (GST_OBJECT (pipeline));
+    close_ports();
     g_source_remove (bus_watch_id);
     g_main_loop_unref (loop);
-    close_ports();
     return 0;
 }
