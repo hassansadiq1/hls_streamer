@@ -276,9 +276,15 @@ main (int argc, char *argv[])
 
         string port = hls_uri.substr(hls_uri.find_last_of(":") + 1);
 
+        // change directory to source folder
+        chdir(folder_name.c_str());
+
         // start python http server for each source and keep its pid
-        string python_cmd = "python3 -m http.server " + port + " --directory " + folder_name + " & echo $! > " + folder_name + "/pid.txt";
+        string python_cmd = "python3 -m http.server " + port + " & echo $! > pid.txt";
         system(python_cmd.c_str());
+
+        // change directory back to main folder
+        chdir("..");
 
         string segments_location = folder_name + "/segment_%02d.ts";
         string playlist_location = folder_name + "/live";
