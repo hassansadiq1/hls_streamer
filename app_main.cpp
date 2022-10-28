@@ -267,6 +267,8 @@ main (int argc, char *argv[])
         caps = gst_caps_from_string ("video/x-raw(memory:NVMM), format=I420");
         g_object_set (G_OBJECT (capsfilter), "caps", caps, NULL);
 
+        g_object_set (G_OBJECT (encoder), "iframeinterval", 10, NULL);
+
         // create folder for each source
         string folder_name = "source_" + to_string(index+1);
         string folder_cmd = "mkdir " + folder_name;
@@ -296,8 +298,8 @@ main (int argc, char *argv[])
             "playlist-root", hls_uri.c_str(),
             "location", segments_location.c_str(),
             "playlist-location", playlist_location.c_str(),
-            "target-duration", 3,
-            "max-files", 3,
+            "target-duration", 1,
+            "max-files", 5,
              NULL);
 
         gst_bin_add_many (GST_BIN (pipeline), nvvideoconvert, capsfilter, encoder, parser, hlssink, NULL);
