@@ -298,6 +298,7 @@ main (int argc, char *argv[])
             "playlist-root", hls_uri.c_str(),
             "location", segments_location.c_str(),
             "playlist-location", playlist_location.c_str(),
+            "playlist-length", 3,
             "target-duration", 1,
             "max-files", 5,
              NULL);
